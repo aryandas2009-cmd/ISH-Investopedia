@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISH-Investopedia</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="branding">
+      <div class="logo">💹</div>
+      <div class="title">ISH‑Investopedia</div>
+      <div class="subtitle">Learn investment types, then go deep on one</div>
+    </div>
+    <div class="prompt">
+      <input id="promptInput" class="prompt-input" placeholder="Ask: Tell me about bonds, or What are investment types?">
+      <button id="promptButton" class="primary-btn">Explain</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card types" id="typesCard">
+      <div class="card-header">
+        <h2>Investment Types</h2>
+        <p class="muted">Click a card or ask in the prompt above</p>
+      </div>
+      <div class="type-grid" id="typeGrid"></div>
+    </section>
+
+    <section class="card details" id="detailsCard">
+      <div class="card-header">
+        <h2>Guided Details</h2>
+        <p class="muted">Pros, cons, and what to look for</p>
+      </div>
+      <div id="detailsContent" class="details-content">
+        <div class="empty">Choose a type to see a guided explanation.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>Educational use only. Not financial advice.</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
