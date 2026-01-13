@@ -44,6 +44,7 @@ const stockSymbolInput=document.getElementById("stockSymbolInput");
 const searchStockButton=document.getElementById("searchStockButton");
 const sampleTags=document.getElementById("sampleTags");
 let trendChart=null;
+let predictChart=null;
 
 function renderTypes(){
   typeOptions.innerHTML="";
@@ -342,6 +343,7 @@ function renderPredictive(sym){
          <li>Base target: $${d.targets.base.toFixed(2)} (${(d.ret.base*100).toFixed(1)}%)</li>
          <li>Bear target: $${d.targets.bear.toFixed(2)} (${(d.ret.bear*100).toFixed(1)}%)</li>
        </ul></div>
+       <div class="list"><canvas id="forecastCanvas" height="120"></canvas></div>
      </div>
      <div class="section">
        <div class="section-title">Growth & Financial Trend Projections</div>
@@ -358,6 +360,13 @@ function renderPredictive(sym){
          <li>Base Case (moderate probability): ${(d.probs.base*100).toFixed(0)}%</li>
          <li>Bear Case (highest probability): ${(d.probs.bear*100).toFixed(0)}%</li>
        </ul></div>
+       <div class="weights-row" id="weightsRow" data-sym="${sym}">
+         <span>Set weights (%):</span>
+         <label>Bull <input type="number" id="w-bull" min="0" max="100" value="${(d.probs.bull*100).toFixed(0)}"></label>
+         <label>Base <input type="number" id="w-base" min="0" max="100" value="${(d.probs.base*100).toFixed(0)}"></label>
+         <label>Bear <input type="number" id="w-bear" min="0" max="100" value="${(d.probs.bear*100).toFixed(0)}"></label>
+         <button class="apply-btn" id="w-apply">Apply</button>
+       </div>
      </div>
      <div class="section">
        <div class="section-title">Near‑Term Technical/Model Signals</div>
@@ -381,4 +390,23 @@ function renderPredictive(sym){
      </div>`;
   detailsContent.innerHTML=html;
   renderFeedback('predict', sym);
+  const ctx=document.getElementById('forecastCanvas').getContext('2d');
+  if(predictChart)predictChart.destroy();
+  predictChart=new Chart(ctx,{type:'bar',data:{labels:['Bull','Base','Bear'],datasets:[{label:`${d.symbol} 12m Targets`,data:[d.targets.bull,d.targets.base,d.targets.bear],backgroundColor:['#10b981','#6366f1','#ef4444']}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:false}}}});
+  const wb=document.getElementById('w-bull');
+  const wm=document.getElementById('w-base');
+  const wr=document.getElementById('w-bear');
+  const apply=document.getElementById('w-apply');
+  function applyWeights(){
+    const b=parseFloat(wb.value||'0');const m=parseFloat(wm.value||'0');const r=parseFloat(wr.value||'0');
+    const sum=b+m+r;
+    if(sum<=0)return;
+    wb.value=((b/sum)*100).toFixed(0);wm.value=((m/sum)*100).toFixed(0);wr.value=((r/sum)*100).toFixed(0);
+    const weights={bull:parseFloat(wb.value)/100,base:parseFloat(wm.value)/100,bear:parseFloat(wr.value)/100};
+    const expected= d.targets.bull*weights.bull + d.targets.base*weights.base + d.targets.bear*weights.bear;
+    const snap=`Probability‑weighted expected 12m target: ~$${expected.toFixed(2)} • weights: ${Math.round(weights.bull*100)}%/${Math.round(weights.base*100)}%/${Math.round(weights.bear*100)}%`;
+    const summaryList=document.querySelector('.section .list ul');
+    if(summaryList){const li=document.createElement('li');li.textContent=snap;summaryList.appendChild(li)}
+  }
+  if(apply)apply.onclick=applyWeights;
 }

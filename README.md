@@ -27,9 +27,9 @@ ISH‑Investopedia helps new investors learn different investment types and see 
    ```
 2. Start locally (Python):
    ```bash
-   python3 -m http.server 8000
+   python3 -m http.server 8002
    ```
-3. Open http://localhost:8000/
+3. Open http://localhost:8002/ISH-Investopedia/
 
 ## Project Structure
 ```
@@ -46,6 +46,7 @@ ISH-Investopedia/
 - Factors: “Factors to consider for ETFs”
 - Risks: “Risks with cryptocurrency”
 - Trend: header prompt → “MSFT” or “Bitcoin”, then Analyze
+- Predictive trend: in chat → “Predictive trend for MSFT” (shows compact forecast chart and configurable scenario weights)
 - Give feedback: use 👍 or 👎 under the right pane’s result
 
 ## Design Notes

@@ -48,6 +48,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubunt
 .list ul{list-style:none}
 .list li{padding:6px 0;color:#374151}
 .empty{color:var(--muted);padding:24px;text-align:center}
+.weights-row{display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--border)}
+.weights-row input{width:70px;padding:6px 8px;border:1px solid var(--border);border-radius:8px}
+.weights-row .apply-btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#f9fafb;cursor:pointer}
 .feedback{padding:16px;border-top:1px solid var(--border)}
 .feedback-header{display:flex;align-items:center;justify-content:space-between}
 .feedback-actions{display:flex;gap:10px}
