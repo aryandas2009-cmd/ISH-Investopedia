@@ -33,7 +33,7 @@ const investmentTypes={
     look:["Contribute to get match","Start early","Know Roth vs Traditional","Rebalance periodically"]}
 };
 
-const typeGrid=document.getElementById("typeGrid");
+const typeOptions=document.getElementById("typeOptions");
 const detailsContent=document.getElementById("detailsContent");
 const promptInput=document.getElementById("promptInput");
 const promptButton=document.getElementById("promptButton");
@@ -45,13 +45,13 @@ const searchStockButton=document.getElementById("searchStockButton");
 let trendChart=null;
 
 function renderTypes(){
-  typeGrid.innerHTML="";
+  typeOptions.innerHTML="";
   Object.entries(investmentTypes).forEach(([key,val])=>{
-    const card=document.createElement("div");
-    card.className="type-card";
-    card.innerHTML=`<div class="type-title">${val.title}</div><div class="type-desc">${val.desc}</div>`;
-    card.addEventListener("click",()=>renderDetails(key));
-    typeGrid.appendChild(card);
+    const btn=document.createElement("button");
+    btn.className="option-btn";
+    btn.textContent=val.title;
+    btn.addEventListener("click",()=>renderDetails(key));
+    typeOptions.appendChild(btn);
   });
 }
 
