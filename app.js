@@ -80,8 +80,16 @@ function renderDetails(key){
 }
 
 function handlePrompt(){
-  const q=(promptInput.value||"").toLowerCase().trim();
-  if(!q){detailsContent.innerHTML=`<div class="empty">Type a question to get started.</div>`;return}
+  const raw=(promptInput.value||"").trim();
+  const q=raw.toLowerCase();
+  if(!q){detailsContent.innerHTML=`<div class="empty">Type a symbol (e.g., MSFT) or a question to get started.</div>`;return}
+  const sym=getSymbolFromText(raw);
+  if(sym){
+    detailsContent.innerHTML=`<div class="empty">Loading ${sym} 5-year simulated trend...</div>`;
+    const data=generateDummy(sym);
+    renderTrend(data);
+    return;
+  }
   if(q.includes("type")&&(q.includes("investment")||q.includes("invest"))){
     detailsContent.innerHTML=`<div class="section"><div class="section-title">Common types</div>
       <div class="list"><ul>${Object.values(investmentTypes).map(v=>`<li>${v.title}</li>`).join("")}</ul></div></div>`;
@@ -96,6 +104,28 @@ function handlePrompt(){
   detailsContent.innerHTML=`<div class="empty">I can explain investment types or go deep on one. Try “Tell me about stocks”.</div>`;
 }
 
+function getSymbolFromText(text){
+  const upperToken=(text.match(/\b[A-Z]{2,6}\b/)||[])[0];
+  if(upperToken)return upperToken.toUpperCase();
+  const map={
+    bitcoin:'BTC',
+    btc:'BTC',
+    ethereum:'ETH',
+    eth:'ETH',
+    google:'GOOGL',
+    alphabet:'GOOGL',
+    microsoft:'MSFT',
+    msft:'MSFT',
+    ibm:'IBM',
+    tesla:'TSLA',
+    tsla:'TSLA'
+  };
+  const cleaned=text.trim().toLowerCase();
+  if(map[cleaned])return map[cleaned];
+  // If user typed a single word, convert to uppercase as symbol guess
+  if(/^[a-z0-9]{2,6}$/i.test(text) && !text.includes(' ')) return text.toUpperCase();
+  return null;
+}
 function initUI(){
   if(promptButton)promptButton.addEventListener("click",handlePrompt);
   if(promptInput)promptInput.addEventListener("keypress",e=>{if(e.key==="Enter")handlePrompt()});
