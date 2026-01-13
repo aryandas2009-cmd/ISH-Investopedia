@@ -95,9 +95,16 @@ function handlePrompt(){
   detailsContent.innerHTML=`<div class="empty">I can explain investment types or go deep on one. Try “Tell me about stocks”.</div>`;
 }
 
-promptButton.addEventListener("click",handlePrompt);
-promptInput.addEventListener("keypress",e=>{if(e.key==="Enter")handlePrompt()});
-renderTypes();
+function initUI(){
+  if(promptButton)promptButton.addEventListener("click",handlePrompt);
+  if(promptInput)promptInput.addEventListener("keypress",e=>{if(e.key==="Enter")handlePrompt()});
+  if(sendButton)sendButton.addEventListener("click",()=>{const q=(chatInput.value||"").trim();if(!q)return;addMessage(q,true);chatInput.value="";processChat(q)});
+  if(chatInput)chatInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendButton?.click()});
+  if(searchStockButton)searchStockButton.addEventListener("click",searchStock);
+  if(stockSymbolInput)stockSymbolInput.addEventListener("keypress",e=>{if(e.key==="Enter")searchStock()});
+  renderTypes();
+}
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",initUI)}else{initUI()}
 
 function addMessage(text,isUser){
   const row=document.createElement("div");
@@ -125,8 +132,7 @@ function processChat(q){
   }
   addMessage("Ask “Tell me about bonds” or “What are investment types?”.",false);
 }
-sendButton.addEventListener("click",()=>{const q=(chatInput.value||"").trim();if(!q)return;addMessage(q,true);chatInput.value="";processChat(q)});
-chatInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendButton.click()});
+// listeners moved into initUI
 if(searchStockButton)searchStockButton.addEventListener("click",searchStock);
 if(stockSymbolInput)stockSymbolInput.addEventListener("keypress",e=>{if(e.key==="Enter")searchStock()});
 
