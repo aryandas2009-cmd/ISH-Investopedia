@@ -153,6 +153,9 @@ function addMessage(text,isUser){
 }
 function processChat(q){
   const lower=q.toLowerCase();
+  if(lower.includes('predict')||lower.includes('forecast')||lower.includes('outlook')){
+    processPredictive(q);return;
+  }
   if(lower.includes("type")&&(lower.includes("investment")||lower.includes("invest"))){
     addMessage("Common types include: "+Object.values(investmentTypes).map(v=>v.title).join(", ")+".",false);
     return;
@@ -275,4 +278,107 @@ function renderTrend(stock){
   if(trendChart)trendChart.destroy();
   trendChart=new Chart(ctx,{type:'line',data:{labels:labelDates,datasets:[{label:`${stock.symbol} Close`,data:stock.closes,borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.15)',fill:true,tension:.1}]},options:{plugins:{legend:{display:true}}}});
   renderFeedback('trend', stock.symbol);
+}
+
+function processPredictive(q){
+  const sym=getSymbolFromText(q);
+  if(!sym){addMessage("Include a stock symbol (e.g., MSFT) to generate a predictive outlook.",false);return}
+  addMessage(`Showing predictive outlook for ${sym} in the right pane.`,false);
+  renderPredictive(sym);
+}
+
+function seeded(sym){
+  let s=Array.from(sym).reduce((a,c)=>a+c.charCodeAt(0),0);
+  return function(){s=(s*9301+49297)%233280;return s/233280}
+}
+function simulatePredictive(sym){
+  const base=generateDummy(sym);
+  const last=base.stats.latest;
+  const r=seeded(sym);
+  const marketStates=["Neutral","Risk‑on (moderate)","Risk‑off (cautious)"];
+  const market=marketStates[Math.floor(r()*marketStates.length)];
+  const vol=0.28+0.12*r();
+  const driftBase=0.05+0.05*(r()-0.5);
+  const bullRet=0.18+0.08*r();
+  const baseRet=driftBase;
+  const bearRet=-0.10-0.10*r();
+  const probs={bull:0.20,base:0.35,bear:0.45};
+  const targets={
+    bull:last*(1+bullRet),
+    base:last*(1+baseRet),
+    bear:last*(1+bearRet)
+  };
+  const revCagr=8+Math.floor(r()*7);
+  const epsCagr=10+Math.floor(r()*9);
+  const marginTrend=r()>0.5?"Stable to improving":"Flat to slightly compressing";
+  const techSignal=r()>0.5?"Momentum up: 20-period > 50-period; RSI ~55":"Momentum mixed: 20-period ≈ 50-period; RSI ~48";
+  const risksPool=[
+    "Macro slowdown reduces demand",
+    "Execution risks on new product roadmap",
+    "Competitive pricing pressure",
+    "Regulatory or compliance changes",
+    "FX and supply chain volatility"
+  ];
+  const risks=[risksPool[Math.floor(r()*risksPool.length)],risksPool[Math.floor(r()*risksPool.length)],risksPool[Math.floor(r()*risksPool.length)]];
+  const snapshot={
+    price:last,
+    vol:(vol*100).toFixed(0)+"% annualized (simulated)",
+    valuation:`12m base target ~$${targets.base.toFixed(2)} (${(baseRet*100).toFixed(1)}%)`
+  };
+  const narrative=`Based on current context (${market}), the probability‑weighted path skews cautious near‑term, with improvement under a normalizing macro. Upside depends on execution and margin resilience; downside reflects demand softness and multiple compression.`;
+  return{symbol:sym,market,probs,targets,ret:{bull:bullRet,base:baseRet,bear:bearRet},growth:{revCagr,epsCagr,marginTrend},signals:techSignal,risks,snapshot,narrative};
+}
+function renderPredictive(sym){
+  const d=simulatePredictive(sym);
+  const html=
+    `<div class="section">
+       <div class="section-title">${d.symbol} • Current Market Context</div>
+       <div class="list"><ul><li>${d.market}</li></ul></div>
+     </div>
+     <div class="section">
+       <div class="section-title">Consensus Analyst Forecast (12‑Month Trend)</div>
+       <div class="list"><ul>
+         <li>Bull target: $${d.targets.bull.toFixed(2)} (${(d.ret.bull*100).toFixed(1)}%)</li>
+         <li>Base target: $${d.targets.base.toFixed(2)} (${(d.ret.base*100).toFixed(1)}%)</li>
+         <li>Bear target: $${d.targets.bear.toFixed(2)} (${(d.ret.bear*100).toFixed(1)}%)</li>
+       </ul></div>
+     </div>
+     <div class="section">
+       <div class="section-title">Growth & Financial Trend Projections</div>
+       <div class="list"><ul>
+         <li>Revenue CAGR (simulated): ${d.growth.revCagr}%</li>
+         <li>EPS CAGR (simulated): ${d.growth.epsCagr}%</li>
+         <li>Margin trend: ${d.growth.marginTrend}</li>
+       </ul></div>
+     </div>
+     <div class="section">
+       <div class="section-title">Scenario Outlook (Probability Weighted)</div>
+       <div class="list"><ul>
+         <li>Bull Case (low probability): ${(d.probs.bull*100).toFixed(0)}%</li>
+         <li>Base Case (moderate probability): ${(d.probs.base*100).toFixed(0)}%</li>
+         <li>Bear Case (highest probability): ${(d.probs.bear*100).toFixed(0)}%</li>
+       </ul></div>
+     </div>
+     <div class="section">
+       <div class="section-title">Near‑Term Technical/Model Signals</div>
+       <div class="list"><ul><li>${d.signals}</li></ul></div>
+     </div>
+     <div class="section">
+       <div class="section-title">Key Risks That Could Drive Trends</div>
+       <div class="list bad"><ul>${d.risks.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+     </div>
+     <div class="section">
+       <div class="section-title">Summary Snapshot</div>
+       <div class="list"><ul>
+         <li>Last price (simulated): $${d.snapshot.price.toFixed(2)}</li>
+         <li>Volatility: ${d.snapshot.vol}</li>
+         <li>${d.snapshot.valuation}</li>
+       </ul></div>
+     </div>
+     <div class="section">
+       <div class="section-title">Overall Predictive Narrative</div>
+       <div class="list"><ul><li>${d.narrative}</li></ul></div>
+     </div>`;
+  detailsContent.innerHTML=html;
+  renderFeedback('predict', sym);
 }
