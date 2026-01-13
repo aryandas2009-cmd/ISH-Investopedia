@@ -40,6 +40,9 @@ const promptButton=document.getElementById("promptButton");
 const chatMessages=document.getElementById("chatMessages");
 const chatInput=document.getElementById("chatInput");
 const sendButton=document.getElementById("sendButton");
+const stockSymbolInput=document.getElementById("stockSymbolInput");
+const searchStockButton=document.getElementById("searchStockButton");
+let trendChart=null;
 
 function renderTypes(){
   typeGrid.innerHTML="";
@@ -124,6 +127,8 @@ function processChat(q){
 }
 sendButton.addEventListener("click",()=>{const q=(chatInput.value||"").trim();if(!q)return;addMessage(q,true);chatInput.value="";processChat(q)});
 chatInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendButton.click()});
+if(searchStockButton)searchStockButton.addEventListener("click",searchStock);
+if(stockSymbolInput)stockSymbolInput.addEventListener("keypress",e=>{if(e.key==="Enter")searchStock()});
 
 function renderFeedback(scope,itemKey){
   const container=document.getElementById("detailsFeedback");
@@ -145,4 +150,62 @@ function renderFeedback(scope,itemKey){
   if(up)up.onclick=()=>send(true);
   if(down)down.onclick=()=>send(false);
   refresh();
+}
+
+function searchStock(){
+  const symbol=(stockSymbolInput.value||'').trim();
+  if(!symbol){detailsContent.innerHTML=`<div class="empty">Enter a stock symbol</div>`;return}
+  const data=generateDummy(symbol);
+  renderTrend(data);
+}
+
+function generateDummy(symbol){
+  const now=new Date();
+  const start=new Date();
+  start.setFullYear(now.getFullYear()-5);
+  start.setMonth(start.getMonth(),1);
+  const points=60;
+  let price=100+Math.random()*50;
+  const dates=[];const closes=[];const highs=[];const lows=[];
+  for(let i=0;i<points;i++){
+    const d=new Date(start);d.setMonth(start.getMonth()+i,1);
+    const drift=.002;const vol=.05;
+    const u1=Math.random()||1e-6;const u2=Math.random()||1e-6;
+    const z=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+    const r=drift+vol*z;
+    const next=Math.max(1,price*Math.exp(r));
+    const spread=Math.max(.5,Math.abs(next-price)*(.6+Math.random()*.8));
+    dates.push(d.toISOString().slice(0,10));
+    closes.push(+next.toFixed(2));
+    highs.push(+Math.max(price,next)+spread*.5);
+    lows.push(+Math.min(price,next)-spread*.5);
+    price=next;
+  }
+  const latest=closes[closes.length-1];const oldest=closes[0];
+  const totalReturn=((latest-oldest)/oldest)*100;
+  const highest=Math.max(...highs);const lowest=Math.min(...lows);
+  return{symbol:symbol.trim().toUpperCase(),dates,closes,highs,lows,stats:{latest,oldest,totalReturn,highest,lowest}};
+}
+
+function renderTrend(stock){
+  const labelDates=stock.dates.map(x=>new Date(x).toLocaleDateString('en-US',{month:'short',year:'numeric'}));
+  const html=
+    `<div class="section">
+       <div class="section-title">${stock.symbol} • 5-Year Trend (Simulated)</div>
+       <div class="list">
+         <ul>
+           <li>5-year return: ${stock.stats.totalReturn.toFixed(2)}%</li>
+           <li>Highest price: $${stock.stats.highest.toFixed(2)}</li>
+           <li>Lowest price: $${stock.stats.lowest.toFixed(2)}</li>
+         </ul>
+       </div>
+     </div>
+     <div class="section">
+       <div class="list"><canvas id="trendCanvas" height="180"></canvas></div>
+     </div>`;
+  detailsContent.innerHTML=html;
+  const ctx=document.getElementById('trendCanvas').getContext('2d');
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart(ctx,{type:'line',data:{labels:labelDates,datasets:[{label:`${stock.symbol} Close`,data:stock.closes,borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.15)',fill:true,tension:.1}]},options:{plugins:{legend:{display:true}}}});
+  renderFeedback('trend', stock.symbol);
 }

@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISH-Investopedia</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISH-Investopedia</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  </head>
 <body>
   <header class="site-header">
     <div class="branding">
@@ -24,6 +25,10 @@
       <div class="card-header">
         <h2>Investment Types</h2>
         <p class="muted">Click a card or ask in the prompt above</p>
+      </div>
+      <div class="search-row">
+        <input id="stockSymbolInput" class="search-input" placeholder="Enter company symbol (e.g., AAPL, MSFT)">
+        <button id="searchStockButton" class="primary-btn">Search</button>
       </div>
       <div class="type-grid" id="typeGrid"></div>
     </section>
