@@ -37,6 +37,9 @@ const typeGrid=document.getElementById("typeGrid");
 const detailsContent=document.getElementById("detailsContent");
 const promptInput=document.getElementById("promptInput");
 const promptButton=document.getElementById("promptButton");
+const chatMessages=document.getElementById("chatMessages");
+const chatInput=document.getElementById("chatInput");
+const sendButton=document.getElementById("sendButton");
 
 function renderTypes(){
   typeGrid.innerHTML="";
@@ -69,6 +72,7 @@ function renderDetails(key){
        <div class="section-title">What to look out for</div>
        <div class="list look"><ul>${inv.look.map(x=>`<li>${x}</li>`).join("")}</ul></div>
      </div>`;
+  renderFeedback('details', key);
 }
 
 function handlePrompt(){
@@ -92,3 +96,53 @@ promptButton.addEventListener("click",handlePrompt);
 promptInput.addEventListener("keypress",e=>{if(e.key==="Enter")handlePrompt()});
 renderTypes();
 
+function addMessage(text,isUser){
+  const row=document.createElement("div");
+  row.className=`msg ${isUser?'user':'bot'}`;
+  const bubble=document.createElement("div");
+  bubble.className="bubble";
+  bubble.textContent=text;
+  row.appendChild(bubble);
+  chatMessages.appendChild(row);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
+}
+function processChat(q){
+  const lower=q.toLowerCase();
+  if(lower.includes("type")&&(lower.includes("investment")||lower.includes("invest"))){
+    addMessage("Common types include: "+Object.values(investmentTypes).map(v=>v.title).join(", ")+".",false);
+    return;
+  }
+  for(const [key,val] of Object.entries(investmentTypes)){
+    const aliases=[val.title.toLowerCase(),key.replace("-"," ").toLowerCase()];
+    if(aliases.some(a=>lower.includes(a))||lower.includes(key)){
+      addMessage(`Showing details for ${val.title} in the right pane.`,false);
+      renderDetails(key);
+      return;
+    }
+  }
+  addMessage("Ask “Tell me about bonds” or “What are investment types?”.",false);
+}
+sendButton.addEventListener("click",()=>{const q=(chatInput.value||"").trim();if(!q)return;addMessage(q,true);chatInput.value="";processChat(q)});
+chatInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendButton.click()});
+
+function renderFeedback(scope,itemKey){
+  const container=document.getElementById("detailsFeedback");
+  const up=container.querySelector("#fb-up");
+  const down=container.querySelector("#fb-down");
+  const score=container.querySelector("#fb-score");
+  const storageKey=`fb:${scope}:${itemKey}`;
+  function read(){try{return JSON.parse(localStorage.getItem(storageKey)||'{}')}catch{return {}}}
+  function write(obj){localStorage.setItem(storageKey,JSON.stringify(obj))}
+  function refresh(){
+    const data=read();const h=data.helpful||0;const nh=data.notHelpful||0;const t=h+nh;
+    score.textContent=t===0?"No feedback yet":`${Math.round((h/t)*100)}% helpful (${h} 👍 / ${nh} 👎)`;
+  }
+  function send(helpful){
+    const data=read();
+    if(helpful){data.helpful=(data.helpful||0)+1}else{data.notHelpful=(data.notHelpful||0)+1}
+    write(data);refresh();
+  }
+  if(up)up.onclick=()=>send(true);
+  if(down)down.onclick=()=>send(false);
+  refresh();
+}
