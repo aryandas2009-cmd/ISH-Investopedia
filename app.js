@@ -42,6 +42,7 @@ const chatInput=document.getElementById("chatInput");
 const sendButton=document.getElementById("sendButton");
 const stockSymbolInput=document.getElementById("stockSymbolInput");
 const searchStockButton=document.getElementById("searchStockButton");
+const sampleTags=document.getElementById("sampleTags");
 let trendChart=null;
 
 function renderTypes(){
@@ -102,6 +103,10 @@ function initUI(){
   if(chatInput)chatInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendButton?.click()});
   if(searchStockButton)searchStockButton.addEventListener("click",searchStock);
   if(stockSymbolInput)stockSymbolInput.addEventListener("keypress",e=>{if(e.key==="Enter")searchStock()});
+  if(sampleTags)sampleTags.addEventListener('click',e=>{
+    const btn=e.target.closest('.sample-btn');if(!btn)return;
+    const q=btn.getAttribute('data-q')||'';if(!q)return;chatInput.value=q;sendButton?.click();
+  });
   renderTypes();
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",initUI)}else{initUI()}
@@ -122,15 +127,41 @@ function processChat(q){
     addMessage("Common types include: "+Object.values(investmentTypes).map(v=>v.title).join(", ")+".",false);
     return;
   }
+  const modes=[
+    {mode:'proscons',patterns:['pros and cons','pros & cons','advantages','disadvantages']},
+    {mode:'factors',patterns:['factors','consider','look out','what to look','things to consider']},
+    {mode:'risks',patterns:['risk','risks','issues','problems','downsides']}
+  ];
+  let requestedMode=null;
+  for(const m of modes){if(m.patterns.some(p=>lower.includes(p))){requestedMode=m.mode;break}}
+  if(!requestedMode && (lower.includes('trend')||lower.includes('chart')||lower.includes('graph'))){
+    const match=q.match(/[A-Z]{2,6}/);
+    if(match){const sym=match[0];addMessage(`Showing ${sym} 5-year trend in the right pane.`,false);renderTrend(generateDummy(sym));return}
+    addMessage("Please include a stock symbol (e.g., AAPL) to show the trend.",false);
+    return;
+  }
   for(const [key,val] of Object.entries(investmentTypes)){
     const aliases=[val.title.toLowerCase(),key.replace("-"," ").toLowerCase()];
     if(aliases.some(a=>lower.includes(a))||lower.includes(key)){
-      addMessage(`Showing details for ${val.title} in the right pane.`,false);
-      renderDetails(key);
+      addMessage(`Showing ${requestedMode?requestedMode:'details'} for ${val.title} in the right pane.`,false);
+      if(requestedMode){renderByMode(key,requestedMode)}else{renderDetails(key)}
       return;
     }
   }
   addMessage("Ask “Tell me about bonds” or “What are investment types?”.",false);
+}
+
+function renderByMode(key,mode){
+  const inv=investmentTypes[key];if(!inv)return;
+  if(mode==='proscons'){
+    detailsContent.innerHTML=`<div class="section"><div class="section-title">${inv.title}: Pros</div><div class="list good"><ul>${inv.pros.map(p=>`<li>${p}</li>`).join("")}</ul></div></div>
+    <div class="section"><div class="section-title">${inv.title}: Cons</div><div class="list bad"><ul>${inv.cons.map(c=>`<li>${c}</li>`).join("")}</ul></div></div>`;
+  }else if(mode==='factors'){
+    detailsContent.innerHTML=`<div class="section"><div class="section-title">${inv.title}: Factors to consider</div><div class="list look"><ul>${inv.look.map(x=>`<li>${x}</li>`).join("")}</ul></div></div>`;
+  }else if(mode==='risks'){
+    detailsContent.innerHTML=`<div class="section"><div class="section-title">${inv.title}: Risks and issues</div><div class="list bad"><ul>${inv.cons.map(c=>`<li>${c}</li>`).join("")}</ul></div></div>`;
+  }
+  renderFeedback('details', key);
 }
 // listeners moved into initUI
 if(searchStockButton)searchStockButton.addEventListener("click",searchStock);
